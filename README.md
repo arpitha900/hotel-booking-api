@@ -1,108 +1,85 @@
-# Hotel Booking API
+# hotel-booking-api
 
-RESTful backend for the Hotel Booking Management System built with Node.js, Express, and MongoDB.
-
-## Prerequisites
-
-- Node.js v18+
-- MongoDB v6+ (local or Atlas)
-- npm v9+
+REST API for the Hotel Booking Management System. Node.js + Express + MongoDB.
 
 ## Setup
 
 ```bash
+git clone https://github.com/arpitha900/hotel-booking-api.git
 cd hotel-booking-api
 npm install
-cp .env.example .env        # then edit .env with your MongoDB URI
-npm run seed                # populate database with sample data
-npm run dev                 # start development server (nodemon)
 ```
 
-## Environment Variables
+Create a `.env` file in the project root:
 
-| Variable       | Description                          | Default                                    |
-|----------------|--------------------------------------|--------------------------------------------|
-| `PORT`         | Server port                          | `5000`                                     |
-| `MONGODB_URI`  | MongoDB connection string            | `mongodb://localhost:27017/hotel_booking`  |
-| `NODE_ENV`     | Environment (`development`/`production`) | `development`                          |
-| `CLIENT_URL`   | Frontend origin for CORS             | `http://localhost:5173`                    |
-
-## API Endpoints
-
-### Hotels
-| Method | Endpoint                    | Description                              |
-|--------|-----------------------------|------------------------------------------|
-| GET    | `/api/hotels/getHotelList`  | Fetch hotels with pagination & filters   |
-
-**Query params:** `page`, `limit`, `sortBy`, `sortOrder`, `search`, `stateId`, `cityId`, `rating`, `isActive`
-
----
-
-### Users
-| Method | Endpoint                    | Description                              |
-|--------|-----------------------------|------------------------------------------|
-| GET    | `/api/users/getUserList`    | Fetch users with pagination & filters    |
-
-**Query params:** `page`, `limit`, `sortBy`, `sortOrder`, `search`
-
----
-
-### Bookings
-| Method | Endpoint                          | Description                                     |
-|--------|-----------------------------------|-------------------------------------------------|
-| GET    | `/api/bookings/getBookings`       | Fetch bookings (add `download=true` for Excel export) |
-| GET    | `/api/bookings/getBookedUsers`    | Fetch users who have at least one booking       |
-| POST   | `/api/bookings/createBooking`     | Create a new booking                            |
-| POST   | `/api/bookings/:bookingId/cancel` | Cancel a booking                                |
-
-**getBookings query params:** `page`, `limit`, `sortBy`, `sortOrder`, `userId`, `hotelId`, `status`, `fromDate`, `toDate`, `download`
-
-**createBooking body:**
-```json
-{
-  "userId": "string (ObjectId)",
-  "hotelId": "string (ObjectId)",
-  "checkinDate": "ISO date string",
-  "guestCount": "number (1-20)",
-  "requirements": "string (optional)"
-}
+```
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/hotel_booking
+NODE_ENV=development
+CLIENT_URL=http://localhost:3000
 ```
 
-**Booking status codes:** `0 = Confirmed`, `1 = Cancelled`, `2 = Completed`
+If you're using MongoDB Atlas, replace `MONGODB_URI` with your Atlas connection string.
 
----
+```bash
+npm run seed   # seed sample data (optional but recommended)
+npm run dev    # starts on http://localhost:5000
+```
 
-### Location
-| Method | Endpoint      | Description                                 |
-|--------|---------------|---------------------------------------------|
-| GET    | `/api/state`  | Fetch all states                            |
-| GET    | `/api/city`   | Fetch cities (optional `?stateId=` filter)  |
+## Endpoints
 
----
+```
+GET  /api/users/getUserList
+     ?page=1&limit=10&sortBy=name&sortOrder=asc&search=john
 
-### Health Check
-| Method | Endpoint    | Description        |
-|--------|-------------|--------------------|
-| GET    | `/health`   | Server health check|
+GET  /api/hotels/getHotelList
+     ?page=1&limit=10&search=&stateId=&cityId=&rating=&isActive=
 
-## Business Rules
+GET  /api/bookings/getBookings
+     ?page=1&limit=10&userId=&hotelId=&status=&fromDate=&toDate=&download=false
+     (download=true returns Excel file instead of JSON)
 
-- **9 PM Rule**: Bookings for the next calendar day cannot be made after 9 PM
-- **Duplicate Prevention**: Same user cannot book the same hotel on the same check-in date
-- **Multiple Bookings**: A user can book different hotels on the same date
-- **Default Status**: New bookings are always created with status `CONFIRMED (0)`
-- **Cancellation**: Only `CONFIRMED` bookings can be cancelled
+GET  /api/bookings/getBookedUsers
 
-## Project Structure
+POST /api/bookings/createBooking
+     body: { userId, hotelId, checkinDate, guestCount, requirements? }
+
+POST /api/bookings/:bookingId/cancel
+
+GET  /api/state
+GET  /api/city?stateId=
+
+GET  /health
+```
+
+## Booking status
+
+```
+0 = Confirmed
+1 = Cancelled
+2 = Completed
+3 = Pending
+```
+
+## Business rules
+
+- New bookings default to Confirmed (0)
+- Cannot create a booking for the next day after 9 PM
+- Same user + same hotel + same check-in date = rejected (duplicate)
+- Only Confirmed and Pending bookings can be cancelled
+
+## Project structure
 
 ```
 src/
-├── config/         MongoDB connection
-├── models/         Mongoose schemas
-├── controllers/    HTTP layer (req/res only)
-├── services/       Business logic
-├── routes/         Express routers
-├── middleware/     Error handler, Joi validation
-├── validations/    Joi schemas
-└── utils/          AppError, pagination, Excel export
+├── config/       db connection
+├── models/       Mongoose schemas
+├── services/     business logic
+├── controllers/  request/response handling
+├── routes/       express routers
+├── validations/  Joi schemas
+├── middleware/   error handler, validation middleware
+└── utils/        pagination, AppError, Excel export
+scripts/
+└── seed.js
 ```
