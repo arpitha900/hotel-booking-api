@@ -14,8 +14,8 @@ Create a `.env` file in the project root:
 
 ```
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/hotel_booking
-NODE_ENV=development
+MONGODB_URI=
+NODE_ENV=
 CLIENT_URL=http://localhost:3000
 ```
 
